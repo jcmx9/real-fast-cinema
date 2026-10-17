@@ -1,9 +1,12 @@
 """Shared pytest fixtures."""
 
+from collections.abc import Iterator
 from pathlib import Path
 from textwrap import dedent
 
 import pytest
+
+from real_fast_cinema.logsetup import teardown_logging
 
 
 @pytest.fixture
@@ -42,3 +45,9 @@ def config_dir(tmp_path: Path) -> Path:
         encoding="utf-8",
     )
     return directory
+
+
+@pytest.fixture(autouse=True)
+def _reset_logging() -> Iterator[None]:
+    yield
+    teardown_logging()
