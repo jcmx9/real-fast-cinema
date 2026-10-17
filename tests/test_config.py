@@ -5,6 +5,7 @@ import pytest
 from pydantic import ValidationError
 
 from real_fast_cinema.config import (
+    Defaults,
     DownloadOpts,
     Filters,
     GlobalConfig,
@@ -139,3 +140,15 @@ def test_global_config_reads_smtp_from_key() -> None:
     assert config.smtp.starttls is True
     assert config.defaults.every == timedelta(hours=6)
     assert config.defaults.max_retries == 3
+
+
+def test_defaults_every_must_be_positive() -> None:
+    with pytest.raises(ValidationError, match="greater than zero"):
+        Defaults.model_validate({"every": "0s"})
+
+
+def test_profile_every_must_be_positive() -> None:
+    with pytest.raises(ValidationError, match="greater than zero"):
+        Profile.model_validate(
+            {"name": "a", "sources": ["x"], "titles": "t.txt", "every": "0s"}
+        )

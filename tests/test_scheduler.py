@@ -159,3 +159,20 @@ def test_run_daemon_logs_broken_profiles(
     run_daemon(config_dir, _open_ctx_factory(tmp_path, Store(None)), stop)
 
     assert "broken.yaml" in caplog.text
+
+
+def test_run_daemon_survives_unexpected_errors(
+    config_dir: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    @contextmanager
+    def failing(config: GlobalConfig) -> Iterator[RunContext]:
+        raise OSError("disk gone")
+        yield  # pragma: no cover
+
+    stop = FakeEvent(iterations=2)
+
+    run_daemon(config_dir, failing, stop)
+
+    assert stop.delays == [300.0, 300.0]
+    assert "daemon iteration failed" in caplog.text
+    assert "disk gone" in caplog.text

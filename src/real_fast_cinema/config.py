@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Annotated, Literal, Self
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -40,7 +41,15 @@ def parse_duration(value: object) -> timedelta:
     raise ValueError(msg)
 
 
+def _positive(value: timedelta) -> timedelta:
+    if value <= timedelta(0):
+        msg = "every must be greater than zero"
+        raise ValueError(msg)
+    return value
+
+
 Duration = Annotated[timedelta, BeforeValidator(parse_duration)]
+Interval = Annotated[Duration, AfterValidator(_positive)]
 Tristate = bool | Literal["any"]
 Action = Literal["info", "download", "both"]
 Notify = Literal["always", "errors", "never"]
@@ -64,7 +73,7 @@ class SmtpConfig(_Model):
 class Defaults(_Model):
     """Defaults applied to all profiles."""
 
-    every: Duration = timedelta(hours=6)
+    every: Interval = timedelta(hours=6)
     max_retries: int = Field(default=3, ge=1)
 
 
@@ -129,7 +138,7 @@ class Profile(_Model):
     name: str = Field(pattern=r"^[a-z0-9][a-z0-9_-]*$")
     sources: list[str] = Field(min_length=1)
     titles: str
-    every: Duration | None = None
+    every: Interval | None = None
     filters: Filters = Field(default_factory=Filters)
     action: Action = "info"
     download: DownloadOpts | None = None

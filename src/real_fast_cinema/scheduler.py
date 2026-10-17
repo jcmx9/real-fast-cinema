@@ -88,6 +88,8 @@ def run_daemon(
                 delay = min(max_sleep, tick(ctx, profiles))
         except ConfigError as exc:
             logger.error("%s", exc)
+        except Exception:
+            logger.exception("daemon iteration failed")
         logger.debug("sleeping %.0f s", delay)
         stop.wait(delay)
     logger.info("daemon stopped")
