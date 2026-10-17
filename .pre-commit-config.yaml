@@ -1,3 +1,4 @@
+exclude: ^docs/superpowers/
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.17.1  # pin to latest
