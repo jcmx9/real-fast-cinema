@@ -64,6 +64,16 @@ filename = "src/real_fast_cinema/__init__.py"
 search = '__version__ = "{current_version}"'
 replace = '__version__ = "{new_version}"'
 
+[[tool.bumpversion.files]]
+filename = "README.md"
+search = "**Version:** {current_version}"
+replace = "**Version:** {new_version}"
+
+[[tool.bumpversion.files]]
+filename = "README.en.md"
+search = "**Version:** {current_version}"
+replace = "**Version:** {new_version}"
+
 [tool.ruff]
 target-version = "py312"
 line-length = 88

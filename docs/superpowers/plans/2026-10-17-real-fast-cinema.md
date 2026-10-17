@@ -524,9 +524,7 @@ def test_download_target_must_be_relative_without_parent(target: str) -> None:
 
 def test_download_rename_rejects_unknown_placeholder() -> None:
     with pytest.raises(ValidationError, match="unknown placeholder"):
-        DownloadOpts.model_validate(
-            {"target": "x", "rename": "{titel}.{ext}"}
-        )
+        DownloadOpts.model_validate({"target": "x", "rename": "{titel}.{ext}"})
 
 
 def test_download_rename_requires_ext() -> None:
@@ -677,7 +675,9 @@ class DownloadOpts(_Model):
     @classmethod
     def _rename_placeholders(cls, value: str) -> str:
         fields = {
-            field for _, field, _, _ in string.Formatter().parse(value) if field is not None
+            field
+            for _, field, _, _ in string.Formatter().parse(value)
+            if field is not None
         }
         unknown = fields - RENAME_PLACEHOLDERS
         if unknown:
@@ -1232,9 +1232,7 @@ def strip_topic_prefix(topic: str, title: str) -> str:
     topic = topic.strip()
     if not topic:
         return title
-    pattern = re.compile(
-        rf"^\s*{re.escape(topic)}\s*{_SEPARATORS}\s*", re.IGNORECASE
-    )
+    pattern = re.compile(rf"^\s*{re.escape(topic)}\s*{_SEPARATORS}\s*", re.IGNORECASE)
     return pattern.sub("", title, count=1) or title
 
 
@@ -1697,12 +1695,20 @@ def _paged_handler(total: int, calls: list[int]) -> Any:
         calls.append(offset)
         count = max(0, min(PAGE_SIZE, total - offset))
         entries = [
-            {"id": str(i), "title": f"T{i}", "topic": "X", "duration": 60,
-             "timestamp": 0, "url_video": f"https://cdn.example/{i}.mp4"}
+            {
+                "id": str(i),
+                "title": f"T{i}",
+                "topic": "X",
+                "duration": 60,
+                "timestamp": 0,
+                "url_video": f"https://cdn.example/{i}.mp4",
+            }
             for i in range(offset, offset + count)
         ]
-        payload = {"err": None, "result": {"queryInfo": {"totalResults": total},
-                                           "results": entries}}
+        payload = {
+            "err": None,
+            "result": {"queryInfo": {"totalResults": total}, "results": entries},
+        }
         return httpx.Response(200, json=payload)
 
     return handler
@@ -1727,8 +1733,13 @@ def test_search_stops_at_max_results() -> None:
 
 
 def test_search_ignores_non_dict_entries() -> None:
-    payload = {"err": None, "result": {"queryInfo": {"totalResults": 2},
-                                       "results": ["oops", _entries()["a4"]]}}
+    payload = {
+        "err": None,
+        "result": {
+            "queryInfo": {"totalResults": 2},
+            "results": ["oops", _entries()["a4"]],
+        },
+    }
 
     hits = _source(lambda r: httpx.Response(200, json=payload)).search("x")
 
@@ -1736,8 +1747,11 @@ def test_search_ignores_non_dict_entries() -> None:
 
 
 def test_search_retries_server_errors_with_backoff() -> None:
-    responses = [httpx.Response(503), httpx.Response(502),
-                 httpx.Response(200, json=_fixture())]
+    responses = [
+        httpx.Response(503),
+        httpx.Response(502),
+        httpx.Response(200, json=_fixture()),
+    ]
     sleeps: list[float] = []
 
     hits = _source(lambda r: responses.pop(0), sleeps).search("x")
@@ -1776,8 +1790,13 @@ def test_search_does_not_retry_client_errors() -> None:
         httpx.Response(200, text="<html>"),
         httpx.Response(200, json={"err": ["bad query"], "result": None}),
         httpx.Response(200, json={"err": None, "result": {"results": []}}),
-        httpx.Response(200, json={"err": None, "result": {
-            "queryInfo": {"totalResults": 1}, "results": "nope"}}),
+        httpx.Response(
+            200,
+            json={
+                "err": None,
+                "result": {"queryInfo": {"totalResults": 1}, "results": "nope"},
+            },
+        ),
     ],
 )
 def test_search_rejects_unexpected_payloads(response: httpx.Response) -> None:
@@ -2065,9 +2084,7 @@ def get_source(name: str) -> Source:
         factory = _FACTORIES[name]
     except KeyError:
         available = ", ".join(available_sources())
-        raise ConfigError(
-            f"unknown source {name!r} (available: {available})"
-        ) from None
+        raise ConfigError(f"unknown source {name!r} (available: {available})") from None
     return factory()
 
 
@@ -2309,7 +2326,9 @@ class Store:
 
     def mark_downloaded(self, profile: str, hit: Hit, path: Path) -> None:
         """Marks the film as downloaded to ``path``."""
-        self._update(profile, hit, "downloaded = 1, path = ?, last_error = NULL", str(path))
+        self._update(
+            profile, hit, "downloaded = 1, path = ?, last_error = NULL", str(path)
+        )
 
     def mark_failed(self, profile: str, hit: Hit, error: str) -> int:
         """Records a failed download and returns the number of attempts."""
@@ -2419,19 +2438,29 @@ def _client(handler: Any) -> httpx.Client:
 @pytest.mark.parametrize(
     ("template", "overrides", "expected"),
     [
-        ("{topic} - {title}.{ext}", {"title": "Tatort: Unter Freunden"},
-         "Tatort - Unter Freunden.mp4"),
-        ("{topic} - {title}.{ext}", {"title": "Teil 1/2: Mord?"},
-         "Tatort - Teil 1_2_ Mord_.mp4"),
-        ("{title} ({year}).{ext}", {"title": "Cash (2024)", "year": 2024},
-         "Cash (2024).mp4"),
+        (
+            "{topic} - {title}.{ext}",
+            {"title": "Tatort: Unter Freunden"},
+            "Tatort - Unter Freunden.mp4",
+        ),
+        (
+            "{topic} - {title}.{ext}",
+            {"title": "Teil 1/2: Mord?"},
+            "Tatort - Teil 1_2_ Mord_.mp4",
+        ),
+        (
+            "{title} ({year}).{ext}",
+            {"title": "Cash (2024)", "year": 2024},
+            "Cash (2024).mp4",
+        ),
         ("{title} ({year}).{ext}", {}, "Fackel (2026).mp4"),
-        ("{date:%Y-%m-%d} {channel} {title}.{ext}", {},
-         "2026-10-01 ARD Fackel.mp4"),
+        ("{date:%Y-%m-%d} {channel} {title}.{ext}", {}, "2026-10-01 ARD Fackel.mp4"),
         ("{title}.{ext}", {"title": ".."}, "...mp4"),
     ],
 )
-def test_render_filename(template: str, overrides: dict[str, Any], expected: str) -> None:
+def test_render_filename(
+    template: str, overrides: dict[str, Any], expected: str
+) -> None:
     # Review focus 3: "/" and ":" never reach the file system.
     name = render_filename(template, make_hit(**overrides), "mp4")
 
@@ -2493,7 +2522,8 @@ def test_http_download_writes_file_atomically(tmp_path: Path) -> None:
 
 def test_http_download_never_overwrites(tmp_path: Path) -> None:
     downloader = Downloader(
-        tmp_path, client=_client(lambda r: httpx.Response(200, content=b"new")),
+        tmp_path,
+        client=_client(lambda r: httpx.Response(200, content=b"new")),
         ffmpeg=None,
     )
     first = downloader.download(make_hit(), OPTS)
@@ -2872,9 +2902,11 @@ def test_build_message_headers_and_text() -> None:
 
 
 def test_build_message_html_is_escaped() -> None:
-    html = build_message(_report(), "bot@example.org", ["a@x.org"]).get_body(
-        ("html",)
-    ).get_content()
+    html = (
+        build_message(_report(), "bot@example.org", ["a@x.org"])
+        .get_body(("html",))
+        .get_content()
+    )
 
     assert "&lt;b&gt;Fackel&lt;/b&gt;" in html
     assert "<b>Fackel</b>" not in html
@@ -3761,7 +3793,9 @@ def _notify(ctx: RunContext, profile: Profile, report: Report) -> None:
     if not should_notify(report, profile):
         return
     if ctx.notifier is None:
-        logger.warning("%s: notification needed but no notifier configured", profile.name)
+        logger.warning(
+            "%s: notification needed but no notifier configured", profile.name
+        )
         return
     recipients = profile.mail_to or ctx.config.mail_to
     try:
@@ -3774,7 +3808,9 @@ def _notify(ctx: RunContext, profile: Profile, report: Report) -> None:
 
 
 @contextmanager
-def open_context(config: GlobalConfig, *, dry_run: bool = False) -> Iterator[RunContext]:
+def open_context(
+    config: GlobalConfig, *, dry_run: bool = False
+) -> Iterator[RunContext]:
     """Creates store, sources, downloader and notifier; closes them afterwards.
 
     In dry-run mode no state database is created.
@@ -3917,7 +3953,10 @@ def test_seconds_until_next() -> None:
     store.set_last_run("b", NOW - timedelta(minutes=30))
 
     assert seconds_until_next([a, b], store, SIX_HOURS, NOW) == 1800.0
-    assert seconds_until_next([a, b, make_profile(name="new")], store, SIX_HOURS, NOW) == 0.0
+    assert (
+        seconds_until_next([a, b, make_profile(name="new")], store, SIX_HOURS, NOW)
+        == 0.0
+    )
     assert seconds_until_next([], store, SIX_HOURS, NOW) == float("inf")
 
 
@@ -4169,11 +4208,7 @@ def _own_handlers() -> list[logging.Handler]:
 
 
 def _console_levels() -> list[int]:
-    return [
-        h.level
-        for h in _own_handlers()
-        if not isinstance(h, logging.FileHandler)
-    ]
+    return [h.level for h in _own_handlers() if not isinstance(h, logging.FileHandler)]
 
 
 def test_silent_logs_only_to_file(tmp_path: Path) -> None:
@@ -4195,7 +4230,9 @@ def test_levels_per_verbosity(tmp_path: Path) -> None:
 
     setup_logging(3, tmp_path)
     assert _console_levels() == [logging.DEBUG]
-    file_levels = [h.level for h in _own_handlers() if isinstance(h, logging.FileHandler)]
+    file_levels = [
+        h.level for h in _own_handlers() if isinstance(h, logging.FileHandler)
+    ]
     assert file_levels == [logging.DEBUG]
     assert logging.getLogger().level == logging.DEBUG
 
@@ -4416,7 +4453,9 @@ def test_run_partial_failure_exit_code(
 
 def test_daemon_starts_loop(config_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[Path] = []
-    monkeypatch.setattr(cli, "run_daemon", lambda path, open_ctx, stop: calls.append(path))
+    monkeypatch.setattr(
+        cli, "run_daemon", lambda path, open_ctx, stop: calls.append(path)
+    )
     monkeypatch.setattr(cli.signal, "signal", lambda signum, handler: None)
 
     result = runner.invoke(app, ["daemon", "-c", str(config_dir), "-Q"])
@@ -4434,8 +4473,12 @@ def test_daemon_missing_config(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize(
     ("flags", "level"),
-    [((False, False, False), 1), ((True, True, True), 0),
-     ((False, True, False), 2), ((False, True, True), 3)],
+    [
+        ((False, False, False), 1),
+        ((True, True, True), 0),
+        ((False, True, False), 2),
+        ((False, True, True), 3),
+    ],
 )
 def test_verbosity(flags: tuple[bool, bool, bool], level: int) -> None:
     assert cli.verbosity(*flags) == level
@@ -5549,4 +5592,3 @@ git commit -m "chore: add CI, release tooling and project documents"
 | 12 Deployment | 11 |
 | 13 Testing | all |
 | 14 Project conventions, no PyPI | 1, 12 |
-
