@@ -47,6 +47,18 @@ Verbose = Annotated[bool, typer.Option("--verbose", "-v", help="Extended output.
 Debug = Annotated[bool, typer.Option("--debug", "-vv", help="Debug output.")]
 
 
+FFMPEG_HINT = "ffmpeg not found - HLS downloads will fail"
+
+
+def _ffmpeg_missing() -> bool:
+    return shutil.which("ffmpeg") is None
+
+
+def _warn_missing_ffmpeg() -> None:
+    if _ffmpeg_missing():
+        logger.warning(FFMPEG_HINT)
+
+
 def verbosity(silent: bool, verbose: bool, debug: bool) -> int:
     """Maps the verbosity flags to 0 (silent) .. 3 (debug)."""
     return 0 if silent else (3 if debug else (2 if verbose else 1))
@@ -113,6 +125,7 @@ def run(
     """Run all (or one) profiles once and exit (exit code 2 on partial failure)."""
     config, profiles = _load(config_dir, profile)
     setup_logging(verbosity(silent, verbose, debug), config.data_dir)
+    _warn_missing_ffmpeg()
     partial = False
     try:
         with open_context(config) as ctx:
@@ -139,6 +152,7 @@ def daemon(
     except ConfigError as exc:
         _fail(str(exc))
     setup_logging(verbosity(silent, verbose, debug), config.data_dir)
+    _warn_missing_ffmpeg()
     stop = threading.Event()
 
     def _stop(signum: int, frame: FrameType | None) -> None:
@@ -168,8 +182,8 @@ def check(
     ]
     if needs_mail and config.smtp is None:
         _fail(f"profiles {needs_mail} send mail but config.yaml has no smtp section")
-    if shutil.which("ffmpeg") is None:
-        typer.echo("Warning: ffmpeg not found - HLS downloads will fail", err=True)
+    if _ffmpeg_missing():
+        typer.echo(f"Warning: {FFMPEG_HINT}", err=True)
     try:
         with open_context(config, dry_run=True) as ctx:
             for loaded in profiles:

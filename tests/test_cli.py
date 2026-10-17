@@ -171,3 +171,33 @@ def test_daemon_missing_config(tmp_path: Path) -> None:
 )
 def test_verbosity(flags: tuple[bool, bool, bool], level: int) -> None:
     assert cli.verbosity(*flags) == level
+
+
+def test_run_warns_when_ffmpeg_missing(
+    config_dir: Path,
+    fake_source: FakeSource,
+    fake_notifier: FakeNotifier,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    monkeypatch.setattr(cli.shutil, "which", lambda name: None)
+
+    result = runner.invoke(app, ["run", "-c", str(config_dir), "-Q"])
+
+    assert result.exit_code == 0, result.output
+    assert "ffmpeg not found" in caplog.text
+
+
+def test_daemon_warns_when_ffmpeg_missing(
+    config_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    monkeypatch.setattr(cli, "run_daemon", lambda path, open_ctx, stop: None)
+    monkeypatch.setattr(cli.signal, "signal", lambda signum, handler: None)
+    monkeypatch.setattr(cli.shutil, "which", lambda name: None)
+
+    result = runner.invoke(app, ["daemon", "-c", str(config_dir), "-Q"])
+
+    assert result.exit_code == 0, result.output
+    assert "ffmpeg not found" in caplog.text
