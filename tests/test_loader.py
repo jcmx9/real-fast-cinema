@@ -5,6 +5,7 @@ import pytest
 from real_fast_cinema.exceptions import ConfigError
 from real_fast_cinema.loader import (
     load_global,
+    load_profile,
     load_profiles,
     load_titles,
 )
@@ -108,3 +109,38 @@ def test_load_profiles_collects_errors_and_keeps_valid_ones(config_dir: Path) ->
 
 def test_load_profiles_without_profiles_dir(tmp_path: Path) -> None:
     assert load_profiles(tmp_path) == ([], [])
+
+
+def test_load_titles_rejects_non_utf8(config_dir: Path) -> None:
+    # Review fix: Latin-1 files raise UnicodeDecodeError, which is not an OSError.
+    (config_dir / "titles" / "latin.txt").write_bytes(b"Caf\xe9\n")
+
+    with pytest.raises(ConfigError, match="not valid UTF-8"):
+        load_titles(config_dir, "latin.txt")
+
+
+def test_load_profile_rejects_non_utf8(config_dir: Path) -> None:
+    path = config_dir / "profiles" / "latin.yaml"
+    path.write_bytes(b"name: caf\xe9\nsources: [s]\ntitles: krimis.txt\n")
+
+    with pytest.raises(ConfigError, match=r"latin\.yaml"):
+        load_profile(config_dir, path)
+
+
+def test_load_profiles_reports_non_utf8_and_keeps_valid_ones(config_dir: Path) -> None:
+    (config_dir / "profiles" / "latin.yaml").write_bytes(
+        b"name: latin\nsources: [s]\ntitles: krimis.txt\n# \xe9\n"
+    )
+
+    profiles, errors = load_profiles(config_dir)
+
+    assert [p.profile.name for p in profiles] == ["krimis"]
+    assert len(errors) == 1
+    assert "latin.yaml" in errors[0]
+
+
+def test_load_global_rejects_non_utf8(config_dir: Path) -> None:
+    (config_dir / "config.yaml").write_bytes(b"data_dir: /caf\xe9\n")
+
+    with pytest.raises(ConfigError, match=r"config\.yaml"):
+        load_global(config_dir)

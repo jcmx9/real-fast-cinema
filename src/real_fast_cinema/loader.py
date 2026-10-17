@@ -27,7 +27,7 @@ class LoadedProfile:
 def _read_yaml(path: Path) -> dict[str, Any]:
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8-sig"))
-    except (OSError, yaml.YAMLError) as exc:
+    except (OSError, UnicodeDecodeError, yaml.YAMLError) as exc:
         raise ConfigError(f"{path}: {exc}") from exc
     if not isinstance(data, dict):
         raise ConfigError(f"{path}: expected a mapping at top level")
@@ -76,8 +76,9 @@ def load_titles(config_dir: Path, name: str) -> tuple[str, ...]:
         raise ConfigError(f"title list {name!r} must be inside {titles_dir}")
     try:
         text = path.read_text(encoding="utf-8-sig")
-    except OSError as exc:
-        raise ConfigError(f"title list unreadable: {path} ({exc.strerror})") from exc
+    except (OSError, UnicodeDecodeError) as exc:
+        reason = exc.strerror if isinstance(exc, OSError) else "not valid UTF-8"
+        raise ConfigError(f"title list unreadable: {path} ({reason})") from exc
     lines = (line.strip() for line in text.splitlines())
     return tuple(dict.fromkeys(t for t in lines if t and not t.startswith("#")))
 
