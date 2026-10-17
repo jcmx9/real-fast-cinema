@@ -191,3 +191,59 @@ def test_auto_detects_ffmpeg(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setattr("shutil.which", lambda name: f"/opt/{name}")
 
     assert Downloader(tmp_path).has_ffmpeg is True
+
+
+def test_render_filename_bad_format_spec_is_download_error() -> None:
+    with pytest.raises(DownloadError, match="rename"):
+        render_filename("{year:%Y}.{ext}", make_hit(), "mp4")
+
+
+def test_render_filename_caps_length_in_bytes_and_keeps_extension() -> None:
+    hit = make_hit(title="\u00e4" * 400)
+
+    name = render_filename("{topic} - {title}.{ext}", hit, "mp4")
+
+    assert len(name.encode("utf-8")) <= 240
+    assert name.endswith(".mp4")
+    assert name.startswith("Tatort - ")
+
+
+def test_download_with_very_long_title_succeeds(tmp_path: Path) -> None:
+    downloader = Downloader(
+        tmp_path,
+        client=_client(lambda r: httpx.Response(200, content=b"x")),
+        ffmpeg=None,
+    )
+
+    path = downloader.download(make_hit(title="\u00e4" * 400), OPTS)
+
+    assert path.read_bytes() == b"x"
+    assert len(path.name.encode("utf-8")) <= 255
+
+
+def test_oserror_while_naming_becomes_download_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def boom(directory: Path, name: str) -> Path:
+        raise OSError(36, "File name too long")
+
+    monkeypatch.setattr("real_fast_cinema.download.unique_path", boom)
+    downloader = Downloader(tmp_path, client=_client(lambda r: httpx.Response(200)))
+
+    with pytest.raises(DownloadError, match="File name too long"):
+        downloader.download(make_hit(), OPTS)
+
+
+def test_unlink_failure_does_not_mask_download_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def boom(self: Path, missing_ok: bool = False) -> None:
+        raise OSError(36, "File name too long")
+
+    monkeypatch.setattr(Path, "unlink", boom)
+    downloader = Downloader(
+        tmp_path, client=_client(lambda r: httpx.Response(500)), ffmpeg=None
+    )
+
+    with pytest.raises(DownloadError, match="HTTPStatusError"):
+        downloader.download(make_hit(), OPTS)

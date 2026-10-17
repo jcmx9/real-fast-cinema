@@ -1,5 +1,6 @@
 """Download action: HTTP streaming for MP4, ffmpeg for HLS streams."""
 
+import contextlib
 import logging
 import re
 import shutil
@@ -22,6 +23,8 @@ logger = logging.getLogger(__name__)
 _INVALID_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 CHUNK_SIZE = 1 << 20
 HLS_TIMEOUT = 6 * 3600
+# 255-byte limit minus ".", ".part" and " (999)" added around the name.
+MAX_NAME_BYTES = 240
 
 
 def render_filename(template: str, hit: Hit, ext: str) -> str:
@@ -35,15 +38,32 @@ def render_filename(template: str, hit: Hit, ext: str) -> str:
     Returns:
         A file name without path separators or leading and trailing dots.
     """
-    name = template.format(
-        topic=hit.topic,
-        title=display_title(hit.topic, hit.title),
-        channel=hit.channel,
-        year=hit.year if hit.year is not None else hit.published.year,
-        date=hit.published,
-        ext=ext,
-    )
-    return _INVALID_CHARS.sub("_", name).strip().strip(".")
+    try:
+        name = template.format(
+            topic=hit.topic,
+            title=display_title(hit.topic, hit.title),
+            channel=hit.channel,
+            year=hit.year if hit.year is not None else hit.published.year,
+            date=hit.published,
+            ext=ext,
+        )
+    except (ValueError, KeyError, IndexError) as exc:
+        raise DownloadError(f"invalid rename template {template!r}: {exc}") from exc
+    return _cap_length(_INVALID_CHARS.sub("_", name).strip().strip("."))
+
+
+def _cap_length(name: str) -> str:
+    """Truncates the stem so the name fits MAX_NAME_BYTES, keeping the extension."""
+    if len(name.encode("utf-8")) <= MAX_NAME_BYTES:
+        return name
+    stem, dot, suffix = name.rpartition(".")
+    if not dot or len(suffix) > 8:
+        stem, suffix = name, ""
+    else:
+        suffix = f".{suffix}"
+    budget = MAX_NAME_BYTES - len(suffix.encode("utf-8"))
+    cut = stem.encode("utf-8")[:budget].decode("utf-8", errors="ignore")
+    return cut.rstrip(" .") + suffix
 
 
 def url_extension(url: str) -> str:
@@ -157,10 +177,11 @@ class Downloader:
         """
         directory = resolve_target(self._root, opts.target)
         ext = "mp4" if hit.is_hls else url_extension(hit.video_url)
-        final = unique_path(directory, render_filename(opts.rename, hit, ext))
-        part = final.with_name(f".{final.name}.part")
-        logger.info("downloading %s -> %s", hit.video_url, final)
+        part: Path | None = None
         try:
+            final = unique_path(directory, render_filename(opts.rename, hit, ext))
+            part = final.with_name(f".{final.name}.part")
+            logger.info("downloading %s -> %s", hit.video_url, final)
             if hit.is_hls:
                 self._download_hls(hit.video_url, part)
             else:
@@ -169,7 +190,9 @@ class Downloader:
         except (httpx.HTTPError, OSError, subprocess.SubprocessError) as exc:
             raise DownloadError(f"{type(exc).__name__}: {exc}") from exc
         finally:
-            part.unlink(missing_ok=True)
+            if part is not None:
+                with contextlib.suppress(OSError):
+                    part.unlink(missing_ok=True)
         return final
 
     def _download_http(self, url: str, part: Path) -> None:

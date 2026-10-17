@@ -2,7 +2,7 @@
 
 import re
 import string
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Annotated, Literal, Self
 
@@ -129,6 +129,18 @@ class DownloadOpts(_Model):
         if "ext" not in fields:
             msg = "rename template must contain {ext}"
             raise ValueError(msg)
+        try:
+            value.format(
+                topic="Topic",
+                title="Title",
+                channel="ARD",
+                year=2026,
+                date=datetime(2026, 1, 1, tzinfo=UTC),
+                ext="mp4",
+            )
+        except (ValueError, KeyError, IndexError) as exc:
+            msg = f"rename template cannot be rendered: {exc}"
+            raise ValueError(msg) from exc
         return value
 
 

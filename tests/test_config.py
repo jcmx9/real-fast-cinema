@@ -152,3 +152,9 @@ def test_profile_every_must_be_positive() -> None:
         Profile.model_validate(
             {"name": "a", "sources": ["x"], "titles": "t.txt", "every": "0s"}
         )
+
+
+@pytest.mark.parametrize("rename", ["{year:%Y}.{ext}", "{title:{ext}", "{0}.{ext}"])
+def test_download_rename_rejects_unrenderable_template(rename: str) -> None:
+    with pytest.raises(ValidationError, match="rename"):
+        DownloadOpts.model_validate({"target": "x", "rename": rename})
