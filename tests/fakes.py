@@ -127,3 +127,22 @@ def make_profile(**overrides: Any) -> LoadedProfile:
     return LoadedProfile(
         profile=Profile.model_validate(data), terms=terms, path=Path("test.yaml")
     )
+
+
+class FakeEvent:
+    """Stands in for threading.Event; stops after ``iterations`` waits."""
+
+    def __init__(self, iterations: int) -> None:
+        self.remaining = iterations
+        self.delays: list[float] = []
+
+    def is_set(self) -> bool:
+        return self.remaining <= 0
+
+    def wait(self, timeout: float | None = None) -> bool:
+        self.delays.append(timeout if timeout is not None else -1.0)
+        self.remaining -= 1
+        return False
+
+    def set(self) -> None:
+        self.remaining = 0
