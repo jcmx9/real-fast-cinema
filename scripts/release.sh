@@ -84,7 +84,12 @@ cmd_tag() {
 
 cmd_prod() {
   local new_month="false"
-  if [[ "${1:-}" == "--new-month" ]]; then
+  if [[ $# -gt 1 ]]; then
+    usage >&2
+    exit 2
+  fi
+  if [[ $# -eq 1 ]]; then
+    [[ "$1" == "--new-month" ]] || { usage >&2; exit 2; }
     new_month="true"
   fi
   command -v gh >/dev/null 2>&1 || die "GitHub CLI (gh) is required"
