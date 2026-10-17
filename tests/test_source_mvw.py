@@ -252,3 +252,15 @@ def test_live_search_returns_hits() -> None:
 
     assert hits
     assert all(h.video_url.startswith("http") for h in hits)
+
+
+def test_search_wraps_other_http_errors_after_retries() -> None:
+    calls: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        raise httpx.DecodingError("bad gzip", request=request)
+
+    with pytest.raises(SourceError, match="giving up after 3 attempts"):
+        _source(handler).search("x")
+    assert len(calls) == 3

@@ -150,7 +150,7 @@ class MediathekViewWeb:
                 response = self._client.post(
                     API_URL, content=body, headers={"Content-Type": "text/plain"}
                 )
-            except httpx.TransportError as exc:
+            except httpx.HTTPError as exc:
                 last_error = f"{type(exc).__name__}: {exc}"
                 continue
             if response.status_code >= 500:
