@@ -3,6 +3,7 @@ services:
   rf-cinema:
     image: ghcr.io/jcmx9/real-fast-cinema:latest
     build: .
+    pull_policy: build
     restart: unless-stopped
     env_file: .env
     volumes:

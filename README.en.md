@@ -39,8 +39,11 @@ Or as a container:
 
 ```bash
 cp -r config.example config && cp .env.example .env   # adjust
+mkdir -p data media && sudo chown 1000:1000 data media
 docker compose up -d
 ```
+
+The image is built locally until the first release (`pull_policy: build` in `docker-compose.yml`).
 
 ## Update
 
@@ -119,7 +122,7 @@ git clone git@github.com:jcmx9/real-fast-cinema.git
 cd real-fast-cinema
 uv sync
 uv run pytest
-uv run pytest -m live          # tests against the real API
+uv run pytest -m live --no-cov # tests against the real API
 uv run ruff check --fix . && uv run ruff format .
 uv run mypy src/
 ```

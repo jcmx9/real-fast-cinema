@@ -201,3 +201,33 @@ def test_daemon_warns_when_ffmpeg_missing(
 
     assert result.exit_code == 0, result.output
     assert "ffmpeg not found" in caplog.text
+
+
+def _unwritable(monkeypatch: pytest.MonkeyPatch) -> None:
+    def boom(verbosity: int, log_dir: Path | None) -> None:
+        raise PermissionError(13, "Permission denied", str(log_dir))
+
+    monkeypatch.setattr(cli, "setup_logging", boom)
+
+
+def test_run_unwritable_data_dir_is_clean_error(
+    config_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _unwritable(monkeypatch)
+
+    result = runner.invoke(app, ["run", "-c", str(config_dir)])
+
+    assert result.exit_code == 1
+    assert "Error: cannot write log file" in result.output
+    assert "Traceback" not in result.output
+
+
+def test_daemon_unwritable_data_dir_is_clean_error(
+    config_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _unwritable(monkeypatch)
+
+    result = runner.invoke(app, ["daemon", "-c", str(config_dir)])
+
+    assert result.exit_code == 1
+    assert "Error: cannot write log file" in result.output

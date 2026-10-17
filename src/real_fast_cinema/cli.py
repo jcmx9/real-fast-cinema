@@ -100,6 +100,13 @@ def version_callback(value: bool) -> None:
         raise typer.Exit()
 
 
+def _setup_logging_or_fail(level: int, data_dir: Path) -> None:
+    try:
+        setup_logging(level, data_dir)
+    except OSError as exc:
+        _fail(f"cannot write log file in {data_dir}: {exc.strerror or exc}")
+
+
 @app.callback()
 def main(
     version: bool = typer.Option(
@@ -124,7 +131,7 @@ def run(
 ) -> None:
     """Run all (or one) profiles once and exit (exit code 2 on partial failure)."""
     config, profiles = _load(config_dir, profile)
-    setup_logging(verbosity(silent, verbose, debug), config.data_dir)
+    _setup_logging_or_fail(verbosity(silent, verbose, debug), config.data_dir)
     _warn_missing_ffmpeg()
     partial = False
     try:
@@ -151,7 +158,7 @@ def daemon(
         config = load_global(config_dir)
     except ConfigError as exc:
         _fail(str(exc))
-    setup_logging(verbosity(silent, verbose, debug), config.data_dir)
+    _setup_logging_or_fail(verbosity(silent, verbose, debug), config.data_dir)
     _warn_missing_ffmpeg()
     stop = threading.Event()
 
