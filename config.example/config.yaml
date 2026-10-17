@@ -1,0 +1,18 @@
+# Global settings. Relative paths are resolved against this directory.
+data_dir: /data            # SQLite state and log file
+downloads_root: /media     # all download targets live below this folder
+
+smtp:
+  host: smtp.example.org
+  port: 587
+  starttls: true
+  user: rf-cinema@example.org
+  from: rf-cinema@example.org
+  # password: environment variable RF_CINEMA_SMTP_PASSWORD
+
+mail_to:
+  - me@example.org
+
+defaults:
+  every: 6h                # run interval if a profile does not set one
+  max_retries: 3           # download attempts per film

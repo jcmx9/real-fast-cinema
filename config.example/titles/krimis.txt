@@ -1,0 +1,4 @@
+# One search term per line. All words must occur in topic + title.
+# Lines starting with # are comments.
+Miss Marple
+Tatort Unter Freunden
