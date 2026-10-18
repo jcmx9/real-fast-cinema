@@ -1,0 +1,18 @@
+{
+  "err": null,
+  "result": {
+    "queryInfo": {"totalResults": 10, "resultCount": 10},
+    "results": [
+      {"id": "a1", "channel": "ARD", "topic": "Tatort", "title": "Trailer: Fackel", "description": "", "timestamp": 1791900000, "duration": 37, "url_website": "https://www.ardmediathek.de/a1", "url_video": "https://cdn.ard.example/a1.mp4", "url_video_low": "", "url_video_hd": "https://cdn.ard.example/a1_hd.mp4", "url_subtitle": "https://cdn.ard.example/a1.vtt"},
+      {"id": "a2", "channel": "ARD", "topic": "Tatort", "title": "Fackel (Audiodeskription)", "description": "", "timestamp": 1791900000, "duration": 5313, "url_website": "https://www.ardmediathek.de/a2", "url_video": "https://cdn.ard.example/a2.mp4", "url_video_low": "", "url_video_hd": "https://cdn.ard.example/a2_hd.mp4", "url_subtitle": "https://cdn.ard.example/a2.vtt"},
+      {"id": "a3", "channel": "ARD", "topic": "Tatort", "title": "Fackel (Gebärdensprache)", "description": "", "timestamp": 1791900000, "duration": 5313, "url_website": "https://www.ardmediathek.de/a3", "url_video": "https://cdn.ard.example/a3.mp4", "url_video_low": "", "url_video_hd": "https://cdn.ard.example/a3_hd.mp4", "url_subtitle": ""},
+      {"id": "a4", "channel": "ARD", "topic": "Tatort", "title": "Fackel", "description": "Ein Fall.", "timestamp": 1791900000, "duration": 5313, "url_website": "https://www.ardmediathek.de/a4", "url_video": "https://cdn.ard.example/a4.mp4", "url_video_low": "https://cdn.ard.example/a4_low.mp4", "url_video_hd": "https://cdn.ard.example/a4_hd.mp4", "url_subtitle": "https://cdn.ard.example/a4.vtt"},
+      {"id": "n1", "channel": "NDR", "topic": "Tatort", "title": "Unter Freunden", "description": "", "timestamp": 1791300000, "duration": 5170, "url_website": "https://www.ndr.example/n1", "url_video": "https://cdn.ndr.example/n1.mp4", "url_video_low": "", "url_video_hd": "https://cdn.ndr.example/n1.1080.mp4", "url_subtitle": ""},
+      {"id": "o1", "channel": "ORF", "topic": "Tatort", "title": "Tatort: Unter Freunden", "description": "", "timestamp": 1791400000, "duration": 5170, "url_website": "https://on.orf.example/o1", "url_video": "https://apasf.example/o1/playlist.m3u8", "url_video_low": "", "url_video_hd": "https://apasf.example/o1/chunklist_b6100000.m3u8", "url_subtitle": ""},
+      {"id": "w1", "channel": "WDR", "topic": "Tatort", "title": "Cash (2024)", "description": "", "timestamp": 1791000000, "duration": 5338, "url_website": "https://www.wdr.example/w1", "url_video": "https://cdn.wdr.example/w1.mp4", "url_video_low": "", "url_video_hd": "", "url_subtitle": ""},
+      {"id": "v1", "channel": "ARTE.DE", "topic": "Kino", "title": "Der Film (OV)", "description": "", "timestamp": 1791000000, "duration": 6000, "url_website": "https://www.arte.example/v1", "url_video": "https://cdn.arte.example/v1.mp4", "url_video_low": "", "url_video_hd": "", "url_subtitle": ""},
+      {"id": "x1", "channel": "ARD", "topic": "Tatort", "title": "Kein Video", "description": "", "timestamp": 1791000000, "duration": 5000, "url_website": "", "url_video": "", "url_video_low": "", "url_video_hd": "", "url_subtitle": ""},
+      {"id": "x2", "channel": "ARD", "topic": "Tatort", "title": "Ohne Dauer", "description": null, "timestamp": 1791000000, "duration": null, "url_website": null, "url_video": "https://cdn.ard.example/x2.mp4", "url_video_low": null, "url_video_hd": null, "url_subtitle": null}
+    ]
+  }
+}

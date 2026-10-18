@@ -1,0 +1,5 @@
+# Default reviewer for all files
+*       @jcmx9
+
+# Separate review for CI/CD changes
+.github/    @jcmx9

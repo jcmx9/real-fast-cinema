@@ -1,0 +1,8 @@
+name: krimis-info
+sources: [mediathekviewweb]
+titles: krimis.txt
+every: 12h
+filters:
+  min_duration: 60m
+  exclude: [Hörfassung]
+action: info

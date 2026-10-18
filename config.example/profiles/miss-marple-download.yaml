@@ -1,0 +1,15 @@
+name: miss-marple-download
+sources: [mediathekviewweb]
+titles: krimis.txt
+every: 6h
+filters:
+  min_duration: 60m
+  audio_description: false
+  sign_language: false
+  trailer: false
+  language: any
+action: download
+download:
+  target: filme/krimis
+  rename: "{topic} - {title} ({year}).{ext}"
+notify: errors             # always | errors | never

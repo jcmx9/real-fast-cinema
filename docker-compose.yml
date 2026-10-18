@@ -1,0 +1,12 @@
+# Example deployment (e.g. on s2). Copy config.example/ to ./config first.
+services:
+  rf-cinema:
+    image: ghcr.io/jcmx9/real-fast-cinema:latest
+    build: .
+    pull_policy: build
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./config:/config:ro
+      - ./data:/data
+      - ./media:/media
