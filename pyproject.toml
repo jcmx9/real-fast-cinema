@@ -88,6 +88,10 @@ extend-immutable-calls = ["pathlib.Path", "typer.Option", "typer.Argument"]
 testpaths = ["tests"]
 addopts = "--cov=src/real_fast_cinema --cov-report=term-missing -n auto -m 'not live'"
 markers = ["live: talks to real external services (run with -m live)"]
+filterwarnings = [
+    "error::ResourceWarning",
+    "error::pytest.PytestUnraisableExceptionWarning",
+]
 
 [tool.mypy]
 python_version = "3.12"

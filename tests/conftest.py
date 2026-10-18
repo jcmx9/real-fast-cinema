@@ -7,6 +7,7 @@ from textwrap import dedent
 import pytest
 
 from real_fast_cinema.logsetup import teardown_logging
+from real_fast_cinema.store import Store
 
 
 @pytest.fixture
@@ -45,6 +46,12 @@ def config_dir(tmp_path: Path) -> Path:
         encoding="utf-8",
     )
     return directory
+
+
+@pytest.fixture
+def store() -> Iterator[Store]:
+    with Store(None) as db:
+        yield db
 
 
 @pytest.fixture(autouse=True)

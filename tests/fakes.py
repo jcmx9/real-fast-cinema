@@ -86,6 +86,7 @@ class FakeDownloader:
 
 def make_ctx(
     tmp_path: Path,
+    store: Store,
     *,
     sources: dict[str, Source] | Callable[[str], Source],
     notifier: FakeNotifier | None = None,
@@ -104,7 +105,7 @@ def make_ctx(
     resolver = sources if callable(sources) else sources.__getitem__
     return RunContext(
         config=config,
-        store=Store(None),
+        store=store,
         sources=resolver,
         downloader=downloader or FakeDownloader(tmp_path),
         notifier=notifier,

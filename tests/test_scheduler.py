@@ -30,8 +30,7 @@ from tests.fakes import (
 SIX_HOURS = timedelta(hours=6)
 
 
-def test_due_profiles_respects_per_profile_interval() -> None:
-    store = Store(None)
+def test_due_profiles_respects_per_profile_interval(store: Store) -> None:
     a = make_profile(name="a")
     b = make_profile(name="b", every="1h")
     c = make_profile(name="c")
@@ -43,8 +42,7 @@ def test_due_profiles_respects_per_profile_interval() -> None:
     assert [p.profile.name for p in due] == ["a", "c"]
 
 
-def test_seconds_until_next() -> None:
-    store = Store(None)
+def test_seconds_until_next(store: Store) -> None:
     a = make_profile(name="a")
     b = make_profile(name="b", every="1h")
     store.set_last_run("a", NOW)
@@ -58,14 +56,14 @@ def test_seconds_until_next() -> None:
     assert seconds_until_next([], store, SIX_HOURS, NOW) == float("inf")
 
 
-def test_seconds_until_next_never_negative() -> None:
-    store = Store(None)
+def test_seconds_until_next_never_negative(store: Store) -> None:
     store.set_last_run("a", NOW - timedelta(days=2))
 
     assert seconds_until_next([make_profile(name="a")], store, SIX_HOURS, NOW) == 0.0
 
 
 def test_tick_runs_due_profiles_and_records_last_run_even_on_failure(
+    store: Store,
     tmp_path: Path,
 ) -> None:
     source = FakeSource(results={"Tatort Fackel": [make_hit()]})
@@ -76,7 +74,7 @@ def test_tick_runs_due_profiles_and_records_last_run_even_on_failure(
         return source
 
     notifier = FakeNotifier()
-    ctx = make_ctx(tmp_path, sources=resolver, notifier=notifier)
+    ctx = make_ctx(tmp_path, store, sources=resolver, notifier=notifier)
     good = make_profile(name="good")
     broken = make_profile(name="broken", sources=["missing"])
 
@@ -89,12 +87,12 @@ def test_tick_runs_due_profiles_and_records_last_run_even_on_failure(
 
 
 def test_tick_survives_unexpected_exceptions(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture
+    store: Store, tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
     def resolver(name: str) -> FakeSource:
         raise RuntimeError("bug")
 
-    ctx = make_ctx(tmp_path, sources=resolver)
+    ctx = make_ctx(tmp_path, store, sources=resolver)
 
     tick(ctx, [make_profile(name="crashy")])
 
@@ -117,8 +115,9 @@ def _open_ctx_factory(tmp_path: Path, store: Store) -> Any:
     return open_ctx
 
 
-def test_run_daemon_loops_until_stopped(config_dir: Path, tmp_path: Path) -> None:
-    store = Store(None)
+def test_run_daemon_loops_until_stopped(
+    store: Store, config_dir: Path, tmp_path: Path
+) -> None:
     stop = FakeEvent(iterations=2)
 
     run_daemon(config_dir, _open_ctx_factory(tmp_path, store), stop)
@@ -128,9 +127,8 @@ def test_run_daemon_loops_until_stopped(config_dir: Path, tmp_path: Path) -> Non
 
 
 def test_run_daemon_uses_short_delay_when_profile_due_soon(
-    config_dir: Path, tmp_path: Path
+    store: Store, config_dir: Path, tmp_path: Path
 ) -> None:
-    store = Store(None)
     store.set_last_run("krimis", NOW - SIX_HOURS + timedelta(seconds=42))
     stop = FakeEvent(iterations=1)
 
@@ -140,23 +138,23 @@ def test_run_daemon_uses_short_delay_when_profile_due_soon(
 
 
 def test_run_daemon_survives_config_errors(
-    tmp_path: Path, caplog: pytest.LogCaptureFixture
+    store: Store, tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
     stop = FakeEvent(iterations=1)
 
-    run_daemon(tmp_path, _open_ctx_factory(tmp_path, Store(None)), stop)
+    run_daemon(tmp_path, _open_ctx_factory(tmp_path, store), stop)
 
     assert stop.delays == [300.0]
     assert "configuration file not found" in caplog.text
 
 
 def test_run_daemon_logs_broken_profiles(
-    config_dir: Path, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    store: Store, config_dir: Path, tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
     (config_dir / "profiles" / "broken.yaml").write_text("name: [", encoding="utf-8")
     stop = FakeEvent(iterations=1)
 
-    run_daemon(config_dir, _open_ctx_factory(tmp_path, Store(None)), stop)
+    run_daemon(config_dir, _open_ctx_factory(tmp_path, store), stop)
 
     assert "broken.yaml" in caplog.text
 
